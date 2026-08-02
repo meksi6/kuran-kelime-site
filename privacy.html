@@ -34,7 +34,7 @@
 <body>
 <div class="wrap">
   <h1>Gizlilik Politikası</h1>
-  <p class="sub">Kelime Kelime Kur'an · Son güncelleme: 9 Temmuz 2026</p>
+  <p class="sub">Kelime Kelime Kur'an · Son güncelleme: 2 Ağustos 2026</p>
 
   <p><strong>Kelime Kelime Kur'an</strong>, kişisel verilerinizi toplamaz. Uygulamanın
   hesabı, girişi veya kullanıcı verisi tutan bir sunucusu yoktur. Bu politika, uygulamanın
@@ -50,11 +50,13 @@
   <p>"Sesli ayet bulucu" özelliğinde, okuduğunuz ya da duyduğunuz ayeti bulabilmek için
   mikrofon kullanılır. Ses:</p>
   <ul>
-    <li>öncelikle <strong>cihazınızda</strong> (cihaz-içi tanıma modeliyle) işlenir;</li>
-    <li>internet varsa Apple'ın konuşma tanıma servisiyle metne çevrilebilir (Apple'ın
-        kendi gizlilik şartlarına tabidir);</li>
-    <li><strong>geliştiricinin sunucusuna gönderilmez</strong>, kaydedilmez ve saklanmaz —
-        yalnızca ayeti bulmak için anlık kullanılır.</li>
+    <li>öncelikle <strong>cihazınızda</strong> (cihaz-içi tanıma modeliyle) ya da Apple'ın
+        konuşma tanıma servisiyle işlenir (Apple'ın kendi gizlilik şartlarına tabidir);</li>
+    <li>internet varsa ve cihazdaki tanıma yeterli olmazsa, ayeti daha isabetli bulabilmek
+        için ses kaydı <strong>geçici olarak</strong> tanıma hizmetimize (Cloudflare Workers
+        üzerinden Groq Whisper) iletilebilir — yalnızca metne çevirmek için;</li>
+    <li>hiçbir durumda <strong>kaydedilmez, saklanmaz</strong>, kimliğinizle ilişkilendirilmez
+        ve başka amaçla kullanılmaz; metne çevrildikten sonra ses atılır.</li>
   </ul>
 
   <h2>Kamera</h2>
