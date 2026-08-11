@@ -69,8 +69,8 @@
     <h1>Kelime Kelime Kur'an</h1>
     <p id="durum">Uygulamayı indirmek için aşağıdaki düğmeye dokun.</p>
     <div id="dugmeler"></div>
-    <div class="ipucu" id="ipucu">Açılmadı mı? Sağ üstteki <b>&#8943;</b> menüsünden
-      <b>&ldquo;Tarayıcıda aç&rdquo;</b> deyip tekrar dene.</div>
+    <div class="ipucu" id="ipucu">Hiçbiri açmazsa: sağ üstteki <b>&#8943;</b> menüsünden
+      <b>&ldquo;Tarayıcıda aç&rdquo;</b> &mdash; bu her zaman çalışır.</div>
     <div class="foot">Ücretsiz · reklamsız · hesap gerekmez</div>
   </div>
 
@@ -124,25 +124,32 @@
   var hedef = ios ? appStore : play;
   var sema = ios ? appScheme : playScheme;
 
-  // ASIL YOL: şema düğmenin href'inde. Dokunuş bir kullanıcı hareketidir; uygulama
-  // içi tarayıcılar bunu engellemez, işletim sistemi şemayı yakalayıp mağazayı açar.
-  durum.innerHTML = 'Uygulamayı indirmek için dokun.';
-  var ana = dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", sema);
-
   var gitti = false;
   document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
 
-  // Şema tutmadıysa (nadiren) normal https adresine düş.
+  if (icTarayici) {
+    // ── GEÇİCİ TEŞHİS TURU ──────────────────────────────────────────────
+    // Instagram webview'ında hangi yolun çalıştığı cihazda ölçülüyor:
+    //   1) düz https mağaza bağlantısı (dokunuşla)   ← en olası, henüz denenmedi
+    //   2) aynı bağlantı yeni sekmede (target=_blank)
+    //   3) itms-apps:// şeması — DOKUNUŞTA BİLE ENGELLENDİĞİ ölçüldü (2026-08-11)
+    // Hangisinin açtığı öğrenilince diğerleri silinecek, tek düğme kalacak.
+    durum.innerHTML = 'Hangi düğme App Store\'u açıyor? Sırayla dene.';
+    dugme('1 · App Store\'da Aç', hedef);
+    var b2 = dugme('2 · Yeni sekmede aç', hedef, true);
+    b2.target = '_blank';
+    var b3 = dugme('3 · Doğrudan mağaza', sema, true);
+    if (ipucu) ipucu.style.display = 'block';
+    return;
+  }
+
+  // Normal tarayıcı: şema düğmede, dokunuş yeterli.
+  durum.innerHTML = 'Uygulamayı indirmek için dokun.';
+  var ana = dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", sema);
   ana.addEventListener('click', function () {
     setTimeout(function () {
       if (!gitti && !document.hidden) window.location.href = hedef;
     }, 1500);
-    // Uygulama içi tarayıcıda ikisi de engellenebilir — çıkış yolunu göster.
-    if (icTarayici) {
-      setTimeout(function () {
-        if (!gitti && !document.hidden && ipucu) ipucu.style.display = 'block';
-      }, 2500);
-    }
   });
 
   // Uygulama içi tarayıcı DEĞİLSE (Safari/Chrome) otomatik denemek zararsız ve hızlı.
