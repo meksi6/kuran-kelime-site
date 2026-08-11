@@ -166,17 +166,32 @@
   document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
 
   if (icTarayici) {
-    // Instagram webview'ında mağazaya DOĞRUDAN geçişin üç yolu da denendi ve
-    // hiçbiri açmadı (2026-08-11, cihazda): düz https, target=_blank, itms-apps://.
-    // Bu yüzden hedef mağaza değil, SİSTEM TARAYICISI — oraya çıkınca Safari
-    // "App Store'da aç?" onayını kendisi gösteriyor ve akış tamamlanıyor.
-    // Yönerge BAŞTAN görünür: bu cihazda doğrulanmış TEK çalışan yol bu.
-    // Düğme yine duruyor — Instagram sürümüne/cihaza göre çalışabiliyor.
-    durum.innerHTML = 'Instagram\'ın kendi tarayıcısı mağazaya geçişi engelliyor.';
-    if (ipucu) ipucu.style.display = 'block';
+    // Uygulama içi tarayıcı. Sayfa TEMİZ açılır — çoğu cihazda dokunuş çalışıyor ve
+    // kullanıcı hiç engel görmeden mağazaya gidiyor. Uyarıyı herkese baştan göstermek
+    // (önceki hâli) çalışan kullanıcılara da uygulamayı bozuk gösteriyordu.
+    //
+    // Dokunuştan sonra sayfa hâlâ açıksa engellenmiş demektir; talimat O ZAMAN belirir.
+    // (Bu cihazda Instagram iOS webview'ının dışarıya her geçişi engellediği ölçüldü —
+    //  düz https, target=_blank, itms-apps:// — ama bunun genel mi cihaza özel mi
+    //  olduğu doğrulanmadı, o yüzden varsayılan iyimser.)
+    durum.innerHTML = 'Uygulamayı indirmek için dokun.';
     var cikis = ios ? safariUrl : intentUrl;
-    dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", cikis);
-    kopyaDugmesi();
+    var ana2 = dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", cikis);
+
+    ana2.addEventListener('click', function () {
+      // 1) Çıkış şeması tutmadıysa düz mağaza adresini dene
+      setTimeout(function () {
+        if (!gitti && !document.hidden) { try { window.location.href = hedef; } catch (e) {} }
+      }, 700);
+      // 2) O da olmadıysa elle yolu göster (doğrulanmış yöntem)
+      setTimeout(function () {
+        if (!gitti && !document.hidden && ipucu) {
+          durum.innerHTML = 'Instagram bu geçişi engelliyor — bir adım kaldı:';
+          ipucu.style.display = 'block';
+          kopyaDugmesi();
+        }
+      }, 2200);
+    });
     return;
   }
 
