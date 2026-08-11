@@ -69,8 +69,8 @@
     <h1>Kelime Kelime Kur'an</h1>
     <p id="durum">Uygulamayı indirmek için aşağıdaki düğmeye dokun.</p>
     <div id="dugmeler"></div>
-    <div class="ipucu" id="ipucu">Hiçbiri açmazsa: sağ üstteki <b>&#8943;</b> menüsünden
-      <b>&ldquo;Tarayıcıda aç&rdquo;</b> &mdash; bu her zaman çalışır.</div>
+    <div class="ipucu" id="ipucu"><b>Nasıl indirilir:</b> sağ üstteki <b>&#8943;</b> menüsüne dokun,
+      <b>&ldquo;Tarayıcıda aç&rdquo;</b> (Safari) seç. Mağaza orada sorunsuz açılır.</div>
     <div class="foot">Ücretsiz · reklamsız · hesap gerekmez</div>
   </div>
 
@@ -104,6 +104,30 @@
   var durum = document.getElementById('durum');
   var ipucu = document.getElementById('ipucu');
 
+  // Panoya kopyala: kullanıcı tarayıcıyı kendi açıp yapıştırabilsin.
+  function kopyaDugmesi() {
+    var a = document.createElement('a');
+    a.className = 'btn ghost';
+    a.textContent = 'Bağlantıyı kopyala';
+    a.href = '#';
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var metin = hedef;
+      try {
+        if (navigator.clipboard) navigator.clipboard.writeText(metin);
+        else {
+          var t = document.createElement('textarea');
+          t.value = metin; document.body.appendChild(t); t.select();
+          document.execCommand('copy'); document.body.removeChild(t);
+        }
+        a.textContent = 'Kopyalandı ✓';
+      } catch (err) {
+        a.textContent = 'Kopyalanamadı';
+      }
+    });
+    dugmeler.appendChild(a);
+  }
+
   function dugme(metin, href, hayalet) {
     var a = document.createElement('a');
     a.className = 'btn' + (hayalet ? ' ghost' : '');
@@ -128,18 +152,15 @@
   document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
 
   if (icTarayici) {
-    // ── GEÇİCİ TEŞHİS TURU ──────────────────────────────────────────────
-    // Instagram webview'ında hangi yolun çalıştığı cihazda ölçülüyor:
-    //   1) düz https mağaza bağlantısı (dokunuşla)   ← en olası, henüz denenmedi
-    //   2) aynı bağlantı yeni sekmede (target=_blank)
-    //   3) itms-apps:// şeması — DOKUNUŞTA BİLE ENGELLENDİĞİ ölçüldü (2026-08-11)
-    // Hangisinin açtığı öğrenilince diğerleri silinecek, tek düğme kalacak.
-    durum.innerHTML = 'Hangi düğme App Store\'u açıyor? Sırayla dene.';
-    dugme('1 · App Store\'da Aç', hedef);
-    var b2 = dugme('2 · Yeni sekmede aç', hedef, true);
-    b2.target = '_blank';
-    var b3 = dugme('3 · Doğrudan mağaza', sema, true);
+    // Instagram'ın iOS webview'ında ÜÇ yol da denendi ve hiçbiri mağazayı açmadı
+    // (2026-08-11, cihazda): düz https bağlantı, target=_blank, itms-apps:// şeması.
+    // Çalışan TEK yol: ⋯ menüsünden "Tarayıcıda aç". O yüzden bunu gizlemek yerine
+    // ASIL yönerge yapıyoruz — kullanıcıyı çalışmayan düğmelerle uğraştırmak,
+    // sessizce kaybetmekten daha kötü.
+    durum.innerHTML = 'Instagram\'ın kendi tarayıcısı App Store\'a geçişi engelliyor.';
     if (ipucu) ipucu.style.display = 'block';
+    dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", hedef);
+    kopyaDugmesi();
     return;
   }
 
