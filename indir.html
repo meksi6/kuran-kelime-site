@@ -12,12 +12,16 @@
   Sorun: iOS'ta Instagram/Facebook'un uygulama içi tarayıcısı apps.apple.com'u
   bazen beyaz ekran açıyor; kullanıcı mağazaya hiç ulaşamıyor.
 
-  Çözüm üç kademeli:
-    1) itms-apps:// (iOS) veya market:// (Android) şeması denenir — bu şemaları
-       işletim sistemi yakalar ve mağaza UYGULAMASINI açar, webview'a bırakmaz.
-    2) 1,2 sn içinde bir şey olmazsa normal https mağaza adresine düşülür.
-    3) Her hâlükârda ekranda büyük bir düğme durur.
-  Böylece hiçbir senaryoda kullanıcı boş ekranla kalmaz.
+  Instagram'ın webview'ı KULLANICI DOKUNMADAN yapılan yönlendirmeleri engelliyor
+  (2026-08-11'de cihazda doğrulandı: sayfa açılıyor, otomatik yönlendirme hiç
+  çalışmıyordu). Bu yüzden şema otomatik denenmez — DÜĞMENİN KENDİSİNE konur:
+  gerçek bir dokunuş "kullanıcı hareketi" sayılır ve iOS/Android şemayı yakalayıp
+  mağaza uygulamasını açar.
+
+  Kademeler:
+    1) Düğme → itms-apps:// (iOS) / market:// (Android)  ← asıl yol, dokunuşla
+    2) Dokunuştan sonra 1,5 sn içinde sayfa hâlâ açıksa https mağaza adresi denenir
+    3) Uygulama içi tarayıcı ikisini de engellerse "tarayıcıda aç" ipucu görünür
 
   Kampanya: ?k=instagram gibi bir etiket verilirse App Store bağlantısına ct=,
   Play bağlantısına utm_source= olarak eklenir. App Store Connect > Analytics >
@@ -47,11 +51,15 @@
     background: linear-gradient(180deg, #f0d488, #c99e3f); color: #10201a;
   }
   a.btn.ghost { background: transparent; border: 1px solid #d7d7cd; color: #0b3a27; font-weight: 600; }
+  .ipucu { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 12px;
+    background: rgba(201,158,63,.12); border: 1px solid rgba(201,158,63,.35);
+    font-size: .88rem; line-height: 1.5; color: #6b5a2e; }
   .foot { margin-top: 22px; font-size: .8rem; color: #9aa39c; }
   @media (prefers-color-scheme: dark) {
     body { background: #0b1410; color: #e8efe9; }
     h1 { color: #e3c067; } p { color: #9fb0a6; }
     a.btn.ghost { border-color: #24382d; color: #cfe0d5; }
+    .ipucu { color: #e0cd9a; }
   }
 </style>
 </head>
@@ -59,8 +67,10 @@
   <div class="card">
     <div class="logo">اقْرَأْ</div>
     <h1>Kelime Kelime Kur'an</h1>
-    <p id="durum">Mağaza açılıyor…<br>Açılmazsa aşağıdaki düğmeye dokun.</p>
+    <p id="durum">Uygulamayı indirmek için aşağıdaki düğmeye dokun.</p>
     <div id="dugmeler"></div>
+    <div class="ipucu" id="ipucu">Açılmadı mı? Sağ üstteki <b>&#8943;</b> menüsünden
+      <b>&ldquo;Tarayıcıda aç&rdquo;</b> deyip tekrar dene.</div>
     <div class="foot">Ücretsiz · reklamsız · hesap gerekmez</div>
   </div>
 
@@ -87,9 +97,12 @@
   var ua = navigator.userAgent || '';
   var ios = /iPhone|iPad|iPod/i.test(ua);
   var android = /Android/i.test(ua);
+  // Instagram / Facebook / TikTok gibi uygulama içi tarayıcılar
+  var icTarayici = /Instagram|FBAN|FBAV|FB_IAB|Line|TikTok|Twitter/i.test(ua);
 
   var dugmeler = document.getElementById('dugmeler');
   var durum = document.getElementById('durum');
+  var ipucu = document.getElementById('ipucu');
 
   function dugme(metin, href, hayalet) {
     var a = document.createElement('a');
@@ -98,10 +111,10 @@
     a.href = href;
     a.rel = 'noopener';
     dugmeler.appendChild(a);
+    return a;
   }
 
   if (!ios && !android) {
-    // Masaüstü: yönlendirme yapma, iki mağazayı da göster.
     durum.innerHTML = 'Telefonundan aç ya da mağazayı seç.';
     dugme('App Store', appStore);
     dugme('Google Play', play, true);
@@ -110,17 +123,35 @@
 
   var hedef = ios ? appStore : play;
   var sema = ios ? appScheme : playScheme;
-  dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", hedef);
 
-  // Sayfa arka plana geçtiyse mağaza açılmış demektir; ikinci bir yönlendirme
-  // yapıp kullanıcıyı geri çekmeyelim.
+  // ASIL YOL: şema düğmenin href'inde. Dokunuş bir kullanıcı hareketidir; uygulama
+  // içi tarayıcılar bunu engellemez, işletim sistemi şemayı yakalayıp mağazayı açar.
+  durum.innerHTML = 'Uygulamayı indirmek için dokun.';
+  var ana = dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", sema);
+
   var gitti = false;
   document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
 
-  try { location.replace(sema); } catch (e) {}
-  setTimeout(function () {
-    if (!gitti && !document.hidden) location.replace(hedef);
-  }, 1200);
+  // Şema tutmadıysa (nadiren) normal https adresine düş.
+  ana.addEventListener('click', function () {
+    setTimeout(function () {
+      if (!gitti && !document.hidden) window.location.href = hedef;
+    }, 1500);
+    // Uygulama içi tarayıcıda ikisi de engellenebilir — çıkış yolunu göster.
+    if (icTarayici) {
+      setTimeout(function () {
+        if (!gitti && !document.hidden && ipucu) ipucu.style.display = 'block';
+      }, 2500);
+    }
+  });
+
+  // Uygulama içi tarayıcı DEĞİLSE (Safari/Chrome) otomatik denemek zararsız ve hızlı.
+  if (!icTarayici) {
+    try { window.location.replace(sema); } catch (e) {}
+    setTimeout(function () {
+      if (!gitti && !document.hidden) window.location.replace(hedef);
+    }, 1200);
+  }
 })();
 </script>
 </body>
