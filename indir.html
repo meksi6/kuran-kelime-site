@@ -94,6 +94,17 @@
                   '&referrer=utm_source%3D' + encodeURIComponent(k);
   var playScheme = 'market://details?id=' + ANDROID_PKG;
 
+  // Uygulama içi tarayıcıdan SİSTEM tarayıcısına çıkış.
+  // iOS: x-safari-https:// belgelenmemiş ama uygulama içi webview'lardan Safari'yi
+  // açmak için yaygın çalışan yol. Safari'de App Store bağlantısı zaten "App Store'da
+  // aç?" onayını gösteriyor — kullanıcının gördüğü akış bu.
+  // Android: intent:// ile Chrome'a çıkılır, browser_fallback_url ile de garanti altına alınır.
+  var safariUrl = 'x-safari-' + appStore;
+  var intentUrl =
+    'intent://details?id=' + ANDROID_PKG +
+    '#Intent;scheme=market;package=com.android.vending;' +
+    'S.browser_fallback_url=' + encodeURIComponent(play) + ';end';
+
   var ua = navigator.userAgent || '';
   var ios = /iPhone|iPad|iPod/i.test(ua);
   var android = /Android/i.test(ua);
@@ -151,15 +162,20 @@
   var gitti = false;
   document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
 
+  var gitti = false;
+  document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
+
   if (icTarayici) {
-    // Instagram'ın iOS webview'ında ÜÇ yol da denendi ve hiçbiri mağazayı açmadı
-    // (2026-08-11, cihazda): düz https bağlantı, target=_blank, itms-apps:// şeması.
-    // Çalışan TEK yol: ⋯ menüsünden "Tarayıcıda aç". O yüzden bunu gizlemek yerine
-    // ASIL yönerge yapıyoruz — kullanıcıyı çalışmayan düğmelerle uğraştırmak,
-    // sessizce kaybetmekten daha kötü.
-    durum.innerHTML = 'Instagram\'ın kendi tarayıcısı App Store\'a geçişi engelliyor.';
+    // Instagram webview'ında mağazaya DOĞRUDAN geçişin üç yolu da denendi ve
+    // hiçbiri açmadı (2026-08-11, cihazda): düz https, target=_blank, itms-apps://.
+    // Bu yüzden hedef mağaza değil, SİSTEM TARAYICISI — oraya çıkınca Safari
+    // "App Store'da aç?" onayını kendisi gösteriyor ve akış tamamlanıyor.
+    // Yönerge BAŞTAN görünür: bu cihazda doğrulanmış TEK çalışan yol bu.
+    // Düğme yine duruyor — Instagram sürümüne/cihaza göre çalışabiliyor.
+    durum.innerHTML = 'Instagram\'ın kendi tarayıcısı mağazaya geçişi engelliyor.';
     if (ipucu) ipucu.style.display = 'block';
-    dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", hedef);
+    var cikis = ios ? safariUrl : intentUrl;
+    dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", cikis);
     kopyaDugmesi();
     return;
   }
