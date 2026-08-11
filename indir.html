@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kelime Kelime Kur'an — İndir</title>
+<meta name="robots" content="noindex" />
+<meta name="description" content="Kelime Kelime Kur'an uygulamasını App Store veya Google Play'den indir." />
+<!--
+  İNDİR YÖNLENDİRME SAYFASI
+
+  Sorun: iOS'ta Instagram/Facebook'un uygulama içi tarayıcısı apps.apple.com'u
+  bazen beyaz ekran açıyor; kullanıcı mağazaya hiç ulaşamıyor.
+
+  Çözüm üç kademeli:
+    1) itms-apps:// (iOS) veya market:// (Android) şeması denenir — bu şemaları
+       işletim sistemi yakalar ve mağaza UYGULAMASINI açar, webview'a bırakmaz.
+    2) 1,2 sn içinde bir şey olmazsa normal https mağaza adresine düşülür.
+    3) Her hâlükârda ekranda büyük bir düğme durur.
+  Böylece hiçbir senaryoda kullanıcı boş ekranla kalmaz.
+
+  Kampanya: ?k=instagram gibi bir etiket verilirse App Store bağlantısına ct=,
+  Play bağlantısına utm_source= olarak eklenir. App Store Connect > Analytics >
+  Acquisition > Campaigns altında hangi kaynağın indirme getirdiği görünür.
+  Örnek: .../indir.html?k=instagram
+-->
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #10201a; background: #f7f7f4; text-align: center;
+  }
+  .card { max-width: 420px; width: 100%; }
+  .logo {
+    width: 84px; height: 84px; margin: 0 auto 18px; border-radius: 20px;
+    display: grid; place-items: center; font-size: 34px; color: #e3c067;
+    background: radial-gradient(120% 120% at 50% 35%, #12402d, #061a11);
+    border: 1px solid rgba(227,192,103,.35); font-family: "Amiri Quran", serif;
+  }
+  h1 { font-size: 1.35rem; margin: 0 0 8px; color: #0b3a27; }
+  p { color: #6b7280; line-height: 1.6; margin: 0 0 24px; font-size: .95rem; }
+  a.btn {
+    display: block; padding: 15px 22px; border-radius: 14px; text-decoration: none;
+    font-weight: 700; font-size: 1.05rem; margin-bottom: 10px;
+    background: linear-gradient(180deg, #f0d488, #c99e3f); color: #10201a;
+  }
+  a.btn.ghost { background: transparent; border: 1px solid #d7d7cd; color: #0b3a27; font-weight: 600; }
+  .foot { margin-top: 22px; font-size: .8rem; color: #9aa39c; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0b1410; color: #e8efe9; }
+    h1 { color: #e3c067; } p { color: #9fb0a6; }
+    a.btn.ghost { border-color: #24382d; color: #cfe0d5; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">اقْرَأْ</div>
+    <h1>Kelime Kelime Kur'an</h1>
+    <p id="durum">Mağaza açılıyor…<br>Açılmazsa aşağıdaki düğmeye dokun.</p>
+    <div id="dugmeler"></div>
+    <div class="foot">Ücretsiz · reklamsız · hesap gerekmez</div>
+  </div>
+
+<script>
+(function () {
+  var APPLE_ID = '6775903043';
+  var ANDROID_PKG = 'com.mahmuteksi.kurankelime';
+
+  // Kampanya etiketi: yalnız harf/rakam/tire. Adres satırından gelen değer
+  // hiçbir zaman sayfaya olduğu gibi yazılmaz.
+  var k = 'site';
+  try {
+    var ham = new URLSearchParams(location.search).get('k') || '';
+    var temiz = ham.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
+    if (temiz) k = temiz;
+  } catch (e) {}
+
+  var appStore  = 'https://apps.apple.com/tr/app/id' + APPLE_ID + '?pt=0&ct=' + encodeURIComponent(k) + '&mt=8';
+  var appScheme = 'itms-apps://apps.apple.com/tr/app/id' + APPLE_ID + '?pt=0&ct=' + encodeURIComponent(k) + '&mt=8';
+  var play      = 'https://play.google.com/store/apps/details?id=' + ANDROID_PKG +
+                  '&referrer=utm_source%3D' + encodeURIComponent(k);
+  var playScheme = 'market://details?id=' + ANDROID_PKG;
+
+  var ua = navigator.userAgent || '';
+  var ios = /iPhone|iPad|iPod/i.test(ua);
+  var android = /Android/i.test(ua);
+
+  var dugmeler = document.getElementById('dugmeler');
+  var durum = document.getElementById('durum');
+
+  function dugme(metin, href, hayalet) {
+    var a = document.createElement('a');
+    a.className = 'btn' + (hayalet ? ' ghost' : '');
+    a.textContent = metin;
+    a.href = href;
+    a.rel = 'noopener';
+    dugmeler.appendChild(a);
+  }
+
+  if (!ios && !android) {
+    // Masaüstü: yönlendirme yapma, iki mağazayı da göster.
+    durum.innerHTML = 'Telefonundan aç ya da mağazayı seç.';
+    dugme('App Store', appStore);
+    dugme('Google Play', play, true);
+    return;
+  }
+
+  var hedef = ios ? appStore : play;
+  var sema = ios ? appScheme : playScheme;
+  dugme(ios ? "App Store'da Aç" : "Google Play'de Aç", hedef);
+
+  // Sayfa arka plana geçtiyse mağaza açılmış demektir; ikinci bir yönlendirme
+  // yapıp kullanıcıyı geri çekmeyelim.
+  var gitti = false;
+  document.addEventListener('visibilitychange', function () { if (document.hidden) gitti = true; });
+
+  try { location.replace(sema); } catch (e) {}
+  setTimeout(function () {
+    if (!gitti && !document.hidden) location.replace(hedef);
+  }, 1200);
+})();
+</script>
+</body>
+</html>
