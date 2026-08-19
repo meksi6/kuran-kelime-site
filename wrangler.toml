@@ -1,0 +1,19 @@
+# kelimekuran.app — site Cloudflare Workers statik barındırmasında yayında.
+# GitHub Pages kopyası (meksi6.github.io/kuran-kelime-site) da OLDUĞU GİBİ durur:
+# uygulamanın ses/bg adresleri oraya bakar; alan adı bu kopyayı sunar.
+#
+# Yayınlama (iki adım):
+#   git push                  → github.io kopyası (GitHub Actions)
+#   npx wrangler@latest deploy → kelimekuran.app (DNS+sertifika kendiliğinden)
+name = "kelimekuran-site"
+compatibility_date = "2026-08-01"
+
+# DİKKAT: routes, [assets] başlığından ÖNCE kalmalı — sonrasına taşınırsa TOML
+# onu assets tablosuna gömer ve alan adları sessizce es geçilir (yaşandı).
+routes = [
+  { pattern = "kelimekuran.app", custom_domain = true },
+  { pattern = "www.kelimekuran.app", custom_domain = true }
+]
+
+[assets]
+directory = "."
