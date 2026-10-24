@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Kelime Kur'an — oynatıcı</title>
+<!--
+  Canlı aşr oynatıcısı (Kelime Kelime Kur'an uygulaması içinde iframe olarak açılır).
+
+  NEDEN BU SAYFA VAR: iOS uygulaması capacitor:// adresinden çalışır; oradan
+  doğrudan gömülen YouTube videosu Referer alamaz ve "Hata 153 — oynatıcı
+  yapılandırma hatası" verir. Oynatıcı bu https sayfasında kurulunca YouTube
+  geçerli bir kaynak görür. Ses/video barındırılmaz; YouTube'un kendi gömülü
+  oynatıcısı kullanılır.
+
+  Uygulamayla konuşma (postMessage):
+    giden → { kaynak: 'kk-yt', tip: 'hazir' | 'zaman' | 'hata', sn, durum, kod }
+    gelen ← { kaynak: 'kk-uyg', komut: 'git' | 'oynat' | 'duraklat', sn }
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #oynatici, iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+  #uyari { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    color: #f2f0e6; font: 14px/1.4 -apple-system, system-ui, sans-serif; text-align: center; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="oynatici"></div>
+<div id="uyari">Video bulunamadı.</div>
+<script>
+(function () {
+  var v = new URLSearchParams(location.search).get('v') || '';
+  if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
+    document.getElementById('uyari').style.display = 'flex';
+    return;
+  }
+  // Komut kabul edilen üst pencereler: uygulama (iOS/Android) ve yerel geliştirme
+  var IZINLI = /^(capacitor:\/\/localhost|https?:\/\/localhost(:\d+)?|https?:\/\/127\.0\.0\.1(:\d+)?)$/;
+  var oynatici = null;
+  function gonder(veri) {
+    veri.kaynak = 'kk-yt';
+    try { window.parent.postMessage(veri, '*'); } catch (e) { /* üst pencere yok */ }
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || d.kaynak !== 'kk-uyg' || !IZINLI.test(e.origin) || !oynatici) return;
+    try {
+      if (d.komut === 'git' && isFinite(d.sn)) oynatici.seekTo(Math.max(0, d.sn), true);
+      else if (d.komut === 'oynat') oynatici.playVideo();
+      else if (d.komut === 'duraklat') oynatici.pauseVideo();
+    } catch (err) { /* oynatıcı hazır değil */ }
+  });
+  window.onYouTubeIframeAPIReady = function () {
+    oynatici = new YT.Player('oynatici', {
+      videoId: v,
+      width: '100%',
+      height: '100%',
+      playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1 },
+      events: {
+        onReady: function (e) {
+          gonder({ tip: 'hazir', sure: e.target.getDuration() });
+          try { e.target.playVideo(); } catch (err) { /* kullanıcı başlatır */ }
+          setInterval(function () {
+            try { gonder({ tip: 'zaman', sn: oynatici.getCurrentTime(), durum: oynatici.getPlayerState() }); }
+            catch (err) { /* yok say */ }
+          }, 250);
+        },
+        onError: function (e) { gonder({ tip: 'hata', kod: e.data }); }
+      }
+    });
+  };
+  var s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  s.onerror = function () { gonder({ tip: 'hata', kod: 'yukleme' }); };
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
