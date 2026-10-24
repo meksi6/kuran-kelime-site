@@ -1,0 +1,5 @@
+# Uygulama (capacitor://localhost, http://localhost) arşiv listesini ve oynatıcıyı
+# buradan çeker; CORS başlığı olmadan fetch tarayıcı tarafından engelleniyor.
+/yt/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300
